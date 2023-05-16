@@ -120,9 +120,9 @@ def parse_response(response):
     else:
         r['response_code_meaning'] = 'unknown'
 
-    # raise when receiving invalid response code
+    # return when receiving non accepted response code
     if r['response_code'] != 5660023:
-        raise PyZandroException(f'Invalid server response: {r}')
+        return
 
     r['query_time'] = next_long(streamobj)
     r['version'] = str(next_string(streamobj), 'utf-8')
