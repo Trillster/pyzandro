@@ -132,12 +132,13 @@ def parse_response(response):
     r['response_flags'] = response_flags
 
     if SQF.NAME in response_flags:
-        r['name'] = next_string(streamobj)
-        r['name_nocolor'] = nocolor(r['name'])
+        name = next_string(streamobj)
+        r['name'] = nocolor(name)
+        r['name_formatted'] = str(name, 'utf-8')
     if SQF.URL in response_flags:
-        r['url'] = next_string(streamobj)
+        r['url'] = str(next_string(streamobj), 'utf-8')
     if SQF.EMAIL in response_flags:
-        r['email'] = next_string(streamobj)
+        r['email'] = str(next_string(streamobj), 'utf-8')
     if SQF.MAPNAME in response_flags:
         r['mapname'] = str(next_string(streamobj), 'utf-8')
     if SQF.MAXCLIENTS in response_flags:
@@ -148,15 +149,15 @@ def parse_response(response):
         n_pwads = next_byte(streamobj)
         r['pwads'] = []
         for i in range(n_pwads):
-            r['pwads'].append(next_string(streamobj))
+            r['pwads'].append(str(next_string(streamobj), 'utf-8'))
     if SQF.GAMETYPE in response_flags:
-        r['gametype'] = GAMETYPE(next_byte(streamobj))
+        r['gametype'] = GAMETYPE(next_byte(streamobj)).value
         r['gametype_instagib'] = next_byte(streamobj)
         r['gametype_buckshot'] = next_byte(streamobj)
     if SQF.GAMENAME in response_flags:
-        r['gamename'] = next_string(streamobj)
+        r['gamename'] = str(next_string(streamobj), 'utf-8')
     if SQF.IWAD in response_flags:
-        r['iwad'] = next_string(streamobj)
+        r['iwad'] = str(next_string(streamobj), 'utf-8')
     if SQF.FORCEPASSWORD in response_flags:
         r['forcepassword'] = next_byte(streamobj)
     if SQF.FORCEJOINPASSWORD in response_flags:
@@ -189,8 +190,9 @@ def parse_response(response):
         r['players'] = players
         for i in range(r['num_players']):
             player = {}
-            player['name'] = next_string(streamobj)
-            player['name_nocolor'] = nocolor(player['name'])
+            name = next_string(streamobj)
+            player['name'] = nocolor(name)
+            player['name_formatted'] = str(name, 'utf-8')
             player['frags'] = next_short(streamobj)
             player['ping'] = next_short(streamobj)
             player['spec'] = next_byte(streamobj)
@@ -198,7 +200,7 @@ def parse_response(response):
             if is_team_game(r['gametype']):
                 player['team'] = next_byte(streamobj)
             else:
-                player['team'] = None
+                player['team'] = -1
             player['time_on_server'] = next_byte(streamobj)
             players.append(player)
     if SQF.TEAMINFO_NUMBER in response_flags:
@@ -206,7 +208,7 @@ def parse_response(response):
     if SQF.TEAMINFO_NAME in response_flags:
         r['teaminfo_names'] = []
         for _ in range(r['teaminfo_number']):
-            r['teaminfo_names'].append(next_string(streamobj))
+            r['teaminfo_names'].append(str(next_string(streamobj), 'utf-8'))
     if SQF.TEAMINFO_COLOR in response_flags:
         r['teaminfo_colors'] = []
         for _ in range(r['teaminfo_number']):
@@ -217,9 +219,9 @@ def parse_response(response):
             r['teaminfo_scores'].append(next_short(streamobj))
     if SQF.TESTING_SERVER in response_flags:
         r['testing_server'] = next_byte()
-        r['testing_server_binary'] = next_string(streamobj)
+        r['testing_server_binary'] = str(next_string(streamobj), 'utf-8')
     if SQF.DATA_MD5SUM in response_flags:
-        r['data_md5sum'] = next_string(streamobj)
+        r['data_md5sum'] = str(next_string(streamobj), 'utf-8')
     if SQF.ALL_DMFLAGS in response_flags:
         num_dmflags = next_byte()
         r['all_dmflags'] = []
@@ -236,7 +238,7 @@ def parse_response(response):
         n_deh = next_byte(streamobj)
         r['deh'] = []
         for _ in range(n_deh):
-            r['deh'].append(next_string(streamobj))
+            r['deh'].append(str(next_string(streamobj), 'utf-8'))
     if SQF.EXTENDED_INFO in response_flags:
         r['extended_info'] = next_long(streamobj)
     return r
