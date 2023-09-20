@@ -67,6 +67,12 @@ class SQF(Enum):
     DEH = 0x40000000
     EXTENDED_INFO = 0x80000000
 
+class SQF2(Enum):
+    PWAD_HASHES = 0x00000001
+    COUNTRY = 0x00000002
+    GAMEMODE_NAME = 0x00000004
+    GAMEMODE_SHORTNAME = 0x00000008
+
 def nocolor(name_bytes):
     import re
     newcolors_removed = re.sub(rb'\x1c\[..\]', b'', name_bytes)
@@ -99,12 +105,6 @@ def combine_flags(Enumtype, enum_values):
     for ev in enum_values:
         result |= Enumtype(ev).value
     return result
-
-
-#sqf2_flags = FlagGroup([
-#    BitFlag("SQF2_PWAD_HASHES", 0x00000001),
-#    BitFlag("SQF2_COUNTRY", 0x00000002),
-#    ])
 
 def parse_response(response):
     streamobj = BytesIO(response)
@@ -241,22 +241,38 @@ def parse_response(response):
             r['deh'].append(str(next_string(streamobj), 'utf-8'))
     if SQF.EXTENDED_INFO in response_flags:
         r['extended_info'] = next_long(streamobj)
+        extended_response_flags = dissect_flags(SQF2, r['extended_info'])
+        if SQF2.PWAD_HASHES in extended_response_flags:
+            n_pwad_hashes = next_byte(streamobj)
+            r['pwad_hashes'] = []
+            for _ in range(n_pwad_hashes):
+                r['pwad_hashes'].append(str(next_string(streamobj), 'utf-8'))
+        if SQF2.COUNTRY in extended_response_flags:
+            r['country'] = bytes([next_byte(streamobj), next_byte(streamobj), next_byte(streamobj)]).decode('ascii')
+        # 3.2 alpha and above only
+        if SQF2.GAMEMODE_NAME in extended_response_flags:
+            r['gamemode_name'] = str(next_string(streamobj), 'utf-8')
+        if SQF2.GAMEMODE_SHORTNAME in extended_response_flags:
+            r['gamemode_shortname'] = str(next_string(streamobj), 'utf-8')
     return r
 
-def query_server(address, flags=[SQF.NAME, SQF.MAPNAME, SQF.NUMPLAYERS, SQF.PLAYERDATA, SQF.GAMETYPE], timeout=3):
+def query_server(address, flags=[SQF.NAME, SQF.MAPNAME, SQF.NUMPLAYERS, SQF.PLAYERDATA, SQF.GAMETYPE], timeout=3, e_flags=[]):
     # if we request playerdata we MUST also request gametype, because the presence
     # of the 'team' field depends in the playerdata response depends on the gametype
     # for non team games the byte representing the player's team is simply not sent
+    # if extended flags are requested, SQF_EXTENDED_INFO must also be requested
     try:
         recv_data = b''
         huffdecoded = b''
-        log_message(call='pyzandro.query_server() {', address=address, flags=str(flags), timeout=timeout)
+        log_message(call='pyzandro.query_server() {', address=address, flags=str(flags), timeout=timeout, e_flags=str(e_flags))
         host, port = split_hostport(address)
         if SQF.PLAYERDATA in flags and SQF.GAMETYPE not in flags:
             flags.append(SQF.GAMETYPE)
+        if len(e_flags) > 0 and SQF.EXTENDED_INFO not in flags:
+            flags.append(SQF.EXTENDED_INFO)
         query_flags = combine_flags(SQF, flags)
-        extended_flags = 0
-        unencoded_query = struct.pack('<llll',
+        extended_flags = combine_flags(SQF2, e_flags)
+        unencoded_query = struct.pack('<LLLL',
             LAUNCHER_CHALLENGE,
             query_flags,
             int(time.time()),
