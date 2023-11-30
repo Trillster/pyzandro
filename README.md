@@ -5,7 +5,7 @@
 # Install
 
 ```
-pip install git+https://github.com/AJMJ2012/pyzandro
+pip install git+https://github.com/Trillster/pyzandro
 ```
 
 # Usage
