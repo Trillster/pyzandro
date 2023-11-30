@@ -75,9 +75,7 @@ class SQF2(Enum):
 
 def nocolor(name_bytes):
     import re
-    newcolors_removed = re.sub(rb'\x1c\[..\]', b'', name_bytes)
-    allcolros_removed = re.sub(rb'\x1c.', b'', newcolors_removed)
-    return str(allcolros_removed, 'utf-8')
+    return str(re.sub(rb'\x1c((\[[^\]]+\])|.)', b'', name_bytes), 'UTF-8')
 
 def is_team_game(mode):
     teammodes = {
